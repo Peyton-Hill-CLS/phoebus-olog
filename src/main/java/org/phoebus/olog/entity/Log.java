@@ -429,6 +429,13 @@ public class Log implements Serializable {
             return this;
         }
 
+        public LogBuilder createDateIfMissing(Instant createDate) {
+            if(this.createDate == null) {
+                return createDate(createDate);
+            }
+            return this;
+        }
+
         public LogBuilder withEvents(List<Event> events) {
             this.events = events;
             return this;

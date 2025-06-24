@@ -71,7 +71,7 @@ public class LogRepository implements CrudRepository<Log, String> {
     public <S extends Log> S save(S log) {
         try {
             Long id = generator.getID();
-            LogBuilder validatedLog = LogBuilder.createLog(log).id(id).createDate(Instant.now());
+            LogBuilder validatedLog = LogBuilder.createLog(log).id(id).createDateIfMissing(Instant.now());
             if (log.getAttachments() != null && !log.getAttachments().isEmpty()) {
                 Set<Attachment> createdAttachments = new HashSet<>();
                 log.getAttachments().stream().filter(attachment -> attachment.getAttachment() != null).forEach(attachment ->
