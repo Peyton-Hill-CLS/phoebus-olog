@@ -10,6 +10,7 @@ import org.phoebus.olog.entity.*;
 import org.phoebus.olog.entity.preprocess.LogPropertyProvider;
 import org.phoebus.olog.entity.preprocess.MarkupCleaner;
 import org.phoebus.olog.notification.LogEntryNotifier;
+import org.phoebus.olog.security.NameUtil;
 import org.phoebus.util.time.TimeParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -80,6 +81,8 @@ public class LogResource {
     @SuppressWarnings("unused")
     @Autowired
     private Long propertyProvidersTimeout;
+    @Autowired
+    private NameUtil nameUtil;
 
     /**
      * Custom HTTP header that client may send in order to identify itself. This is logged for some of the
@@ -225,7 +228,7 @@ public class LogResource {
         if (!inReplyTo.equals("-1")) {
             handleReply(inReplyTo, log);
         }
-        log.setOwner(principal.getName());
+        log.setOwner(nameUtil.findPersonByUsername(principal.getName()));
         Set<String> logbookNames = log.getLogbooks().stream().map(Logbook::getName).collect(Collectors.toSet());
         Set<String> persistedLogbookNames = new HashSet<>();
         logbookRepository.findAll().forEach(l -> persistedLogbookNames.add(l.getName()));
@@ -307,6 +310,102 @@ public class LogResource {
     }
 
 
+
+    @PutMapping("/unnamed")
+    public Log createUnnamed(@RequestHeader(value = OLOG_CLIENT_INFO_HEADER, required = false, defaultValue = "n/a") String clientInfo,
+                             @RequestParam(value = "markup", required = false) String markup,
+                             @RequestParam(value = "inReplyTo", required = false, defaultValue = "-1") String inReplyTo,
+                             @RequestBody Log log) {
+        if (log.getLogbooks().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.LOG_MUST_HAVE_LOGBOOK);
+        }
+        if (log.getTitle().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.LOG_MUST_HAVE_TITLE);
+        }
+        if(log.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.LOG_UNNAMED_MUST_HAVE_OWNER);
+        }
+        if (!inReplyTo.equals("-1")) {
+            handleReply(inReplyTo, log);
+        }
+        Set<String> logbookNames = log.getLogbooks().stream().map(Logbook::getName).collect(Collectors.toSet());
+        Set<String> persistedLogbookNames = new HashSet<>();
+        logbookRepository.findAll().forEach(l -> persistedLogbookNames.add(l.getName()));
+        if (!CollectionUtils.containsAll(persistedLogbookNames, logbookNames)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.LOG_INVALID_LOGBOOKS);
+        }
+        Set<Tag> tags = log.getTags();
+        if (tags != null && !tags.isEmpty()) {
+            Set<String> tagNames = tags.stream().map(Tag::getName).collect(Collectors.toSet());
+            Set<String> persistedTags = new HashSet<>();
+            tagRepository.findAll().forEach(t -> persistedTags.add(t.getName()));
+            if (!CollectionUtils.containsAll(persistedTags, tagNames)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.LOG_INVALID_TAGS);
+            }
+        }
+        log = cleanMarkup(markup, log);
+        addPropertiesFromProviders(log);
+        Log newLogEntry = logRepository.save(log);
+        sendToNotifiers(newLogEntry);
+
+        logger.log(Level.INFO, () -> "Entry id " + newLogEntry.getId() + " created from " + clientInfo);
+
+        return newLogEntry;
+    }
+
+    /**
+     * Creates a new log entry. If the <code>inReplyTo</code> parameters identifies an existing log entry,
+     * this method will treat the new log entry as a reply.
+     * <p>
+     * This may return a HTTP 400 if for instance <code>inReplyTo</code> does not identify an existing log entry,
+     * or if the logbooks listed in the {@link Log} object contains invalid (i.e. non-existing) logbooks.
+     * </p>
+     * <p>Client calling this endpoint <b>must</b> set Content-Type=multipart/form-data.</p>
+     *
+     * @param clientInfo A string sent by client identifying it with respect to version and platform.
+     * @param logEntry   A {@link Log} object to be persisted.
+     * @param markup     Optional string identifying the wanted markup scheme.
+     * @param inReplyTo  Optional log entry id specifying to which log entry the new log entry is a reply.
+     * @param files      Optional array of {@link MultipartFile}s representing attachments. These <b>must</b> appear in the same
+     *                   order as the {@link Attachment} items in the list of {@link Attachment}s of the log entry.
+     * @return The persisted {@link Log} object.
+     */
+    @PutMapping("/unnamed/multipart")
+    public Log createLogUnnamed(@RequestHeader(value = OLOG_CLIENT_INFO_HEADER, required = false, defaultValue = "n/a") String clientInfo,
+                                @RequestParam(value = "markup", required = false) String markup,
+                                @RequestParam(value = "inReplyTo", required = false, defaultValue = "-1") String inReplyTo,
+                                @RequestPart("logEntry") Log logEntry,
+                                @RequestPart(value = "files", required = false) MultipartFile[] files) {
+
+        if (files != null && logEntry.getAttachments() != null && files.length != logEntry.getAttachments().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, TextUtil.ATTACHMENT_DATA_INVALID);
+        }
+
+        Log newLogEntry = createUnnamed(clientInfo, markup, inReplyTo, logEntry);
+
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                String originalFileName = files[i].getOriginalFilename();
+                Optional<Attachment> attachment =
+                        logEntry.getAttachments().stream()
+                                .filter(a -> a.getFilename() != null && a.getFilename().equals(originalFileName)).findFirst();
+                if (attachment.isEmpty()) { // Should not happen if client behaves correctly
+                    logger.log(Level.WARNING, () -> MessageFormat.format(TextUtil.ATTACHMENT_FILE_NOT_MATCHED_META_DATA, originalFileName));
+                    continue;
+                }
+                uploadAttachment(Long.toString(newLogEntry.getId()),
+                        files[i],
+                        originalFileName,
+                        attachment.get().getId(),
+                        attachment.get().getFileMetadataDescription());
+            }
+        }
+
+        logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.LOG_ENTRY_ID_CREATED_FROM, newLogEntry.getId(), clientInfo));
+
+        return newLogEntry;
+    }
+
     /**
      * Add an attachment to log entry identified by logId
      * @param logId log entry ID
@@ -386,7 +485,7 @@ public class LogResource {
                 log.getProperties().add(logEntryGroupProperty);
             }
 
-            persistedLog.setOwner(principal.getName());
+            persistedLog.setOwner(nameUtil.findPersonByUsername(principal.getName()));
             persistedLog.setLevel(log.getLevel());
             persistedLog.setProperties(log.getProperties());
             persistedLog.setModifyDate(Instant.now());

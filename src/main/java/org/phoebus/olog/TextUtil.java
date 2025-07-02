@@ -113,6 +113,7 @@ public class TextUtil {
     public static final String LOG_TEMPLATE_DELETED                     = "Log template {0} deleted";
     public static final String LOG_TEMPLATE_NOT_DELETED                 = "Log template {0} not deleted";
     public static final String LOG_TEMPLATE_DELETE_ALL_NOT_SUPPORTED    = "Delete all templates not supported";
+    public static final String LOG_UNNAMED_MUST_HAVE_OWNER              = "Unamed logs must have the owner field set";
 
     public static final String LOGS_DELETE_NOT_SUPPORTED                = "Deleting log entries is not supported";
     public static final String LOGS_NOT_FOUND                           = "Failed to find logs {0}";
