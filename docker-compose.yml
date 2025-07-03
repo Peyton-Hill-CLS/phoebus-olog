@@ -20,8 +20,11 @@ services:
           echo Waiting for Elasticsearch;
           sleep 1;
         done;
-        java -jar service-olog-*.jar --spring.config.name=application-docker
+        java -jar service-olog-*.jar --spring.config.name=/olog-target/application-docker
       "
+    volumes:
+      - ./application.properties:/olog-target/application.properties
+
 
   mongo:
     image: mongo
