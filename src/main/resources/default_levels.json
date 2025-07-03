@@ -1,26 +1,83 @@
 [
     {
-    "name": "Urgent",
-        "defaultLevel": false
-    },
-    {
-        "name": "Suggestion",
-        "defaultLevel": false
-    },
-    {
-        "name": "Info",
+        "name":"Routine",
         "defaultLevel": true
     },
     {
-        "name": "Request",
+        "name":"Floor Coordinator",
         "defaultLevel": false
     },
     {
-        "name": "Problem",
+        "name":"Injection Start",
         "defaultLevel": false
     },
     {
-        "name": "Bad",
-        "defaultLevel": true
+        "name":"Injection End",
+        "defaultLevel": false
+    },
+    {
+        "name":"Beamlines Enabled",
+        "defaultLevel": false
+    },
+    {
+        "name":"SR1 Trip",
+        "defaultLevel": false
+    },
+    {
+        "name":"LINAC",
+        "defaultLevel": false
+    },
+    {
+        "name":"Top Up",
+        "defaultLevel": false
+    },
+    {
+        "name":"Start of Shift",
+        "defaultLevel": false
+    },
+    {
+        "name":"End of Shift",
+        "defaultLevel": false
+    },
+    {
+        "name":"Important",
+        "defaultLevel": false
+    },
+    {
+        "name":"On Call Contact",
+        "defaultLevel": false
+    },
+    {
+        "name":"Beam Off",
+        "defaultLevel": false
+    },
+    {
+        "name":"Zone Access",
+        "defaultLevel": false
+    },
+    {
+        "name":"Lockup",
+        "defaultLevel": false
+    },
+    {
+        "name":"Bypass",
+        "defaultLevel": false
+    },
+    {
+        "name":"Comment",
+        "defaultLevel": false
+    },
+    {
+        "name":"Comments from Beamlines",
+        "defaultLevel": false
+    },
+    {
+        "name":"Machine Configuration",
+        "defaultLevel": false
+    },
+    {
+        "name":"Maintenance",
+        "defaultLevel": false
     }
 ]
+
