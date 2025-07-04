@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.phoebus.olog.security.SessionFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.h2.H2ConsoleProperties;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
@@ -50,6 +52,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String SESSION_COOKIE_NAME = "SESSION";
     public static final String ROLES_ATTRIBUTE_NAME = "roles";
+    private static final Logger log = LoggerFactory.getLogger(WebSecurityConfig.class);
 
     @Value("${spring.datasource.url:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE}")
     private String h2Url;
@@ -162,12 +165,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
            LdapAuthenticationProviderConfigurer configurer = auth.ldapAuthentication()
                     .ldapAuthoritiesPopulator(myAuthPopulator);
            if(ldap_user_dn_pattern != null && !ldap_user_dn_pattern.isEmpty()){
+               log.info("Using user dn pattern:" + ldap_user_dn_pattern);
                configurer.userDnPatterns(ldap_user_dn_pattern);
            }
            if(ldap_user_search_filter != null && !ldap_user_search_filter.isEmpty()){
+               log.info("Using user search filter:" + ldap_user_search_filter);
                configurer.userSearchFilter(ldap_user_search_filter);
            }
            if(ldap_user_search_base != null && !ldap_user_search_base.isEmpty()){
+               log.info("Using user search base:" + ldap_user_search_base);
                configurer.userSearchBase(ldap_user_search_base);
            }
            configurer.contextSource(contextSource);
