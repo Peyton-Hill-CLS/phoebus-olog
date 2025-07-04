@@ -133,7 +133,7 @@ public class LogSearchUtil {
                     DisMaxQuery.Builder ownerQuery = new DisMaxQuery.Builder();
                     List<Query> ownerQueries = new ArrayList<>();
                     for (String value : parameter.getValue()) {
-                        for (String pattern : value.split("[\\|,;\\s+]")) {
+                        for (String pattern : value.split("[\\|,;+]")) { // [\\|,;\\s+]
                             ownerQueries.add(WildcardQuery.of(w -> w.field("owner")
                                     .caseInsensitive(true)
                                     .value(pattern.trim()))._toQuery());
