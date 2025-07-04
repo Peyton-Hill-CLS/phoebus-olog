@@ -154,4 +154,12 @@ public class Logbook implements Serializable {
         }
         return true;
     }
+
+    public boolean isDefaultLogbook() {
+        return defaultLogbook;
+    }
+
+    public void setDefaultLogbook(boolean defaultLogbook) {
+        this.defaultLogbook = defaultLogbook;
+    }
 }
