@@ -136,7 +136,7 @@ public class LogSearchUtil {
                         for (String pattern : value.split("[\\|,;+]")) { // [\\|,;\\s+]
                             ownerQueries.add(WildcardQuery.of(w -> w.field("owner")
                                     .caseInsensitive(true)
-                                    .value(pattern.trim()))._toQuery());
+                                    .wildcard(pattern.trim()))._toQuery()); //.wildcard use to be .value
                         }
                     }
                     ownerQuery.queries(ownerQueries);
