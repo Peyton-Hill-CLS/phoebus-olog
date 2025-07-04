@@ -69,8 +69,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         web.ignoring().antMatchers(HttpMethod.POST, "/**/login*");
         web.ignoring().antMatchers(HttpMethod.POST, "/**/logout");
         web.ignoring().antMatchers(HttpMethod.GET, "/**/user");
-        web.ignoring().antMatchers(HttpMethod.PUT, "/**/logs/unnamed");
-        web.ignoring().antMatchers(HttpMethod.PUT, "/**/logs/unnamed/multipart");
+        web.ignoring().antMatchers(HttpMethod.PUT, "/**/logs/unnamed*");
+        web.ignoring().antMatchers(HttpMethod.PUT, "/**/logs/unnamed/multipart*");
         // This is needed for CORS pre-flight
         web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**");
         // h2 database console, if enabled.
