@@ -21,7 +21,7 @@ public class Logbook implements Serializable {
     private String name = null;
     private String owner = null;
     private State state = State.Active;
-
+    private boolean defaultLogbook = false;
     /**
      * Creates a new instance of Logbook.
      *

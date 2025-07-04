@@ -1,9 +1,11 @@
 [
     {
         "name": "operations",
-        "owner": "olog-logs"
+        "owner": "olog-logs",
+        "defaultLogbook": true
     },
     {
-        "name": "controls"
+        "name": "controls",
+        "defaultLogbook": false
     }
 ]
