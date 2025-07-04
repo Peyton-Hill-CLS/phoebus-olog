@@ -20,7 +20,7 @@ services:
           echo Waiting for Elasticsearch;
           sleep 1;
         done;
-        java -jar service-olog-*.jar --spring.config.location=file:/olog-target/ --spring.config.name=application
+        java -Duser.timezone=CST -jar service-olog-*.jar --spring.config.location=file:/olog-target/ --spring.config.name=application
       "
     volumes:
       - ./application.properties:/olog-target/application.properties
