@@ -18,6 +18,8 @@
 
 package org.phoebus.olog;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.phoebus.olog.entity.UserData;
 import org.phoebus.olog.security.LoginCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,8 +40,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

@@ -78,6 +78,9 @@
     {
         "name":"Maintenance",
         "defaultLevel": false
+    },
+    {
+        "name":"Shift Summary",
+        "defaultLevel": false
     }
 ]
-

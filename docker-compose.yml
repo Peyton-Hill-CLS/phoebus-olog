@@ -24,7 +24,7 @@ services:
       "
     volumes:
       - ./application.properties:/olog-target/application.properties
-
+      - ./keystore.p12:/keystore.p12
 
   mongo:
     image: mongo
