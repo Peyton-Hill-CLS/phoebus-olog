@@ -30,6 +30,7 @@ import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configurers.ldap.LdapAuthenticationProviderConfigurer;
@@ -46,6 +47,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
+import org.springframework.security.ldap.authentication.BindAuthenticator;
+import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
+import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
@@ -58,6 +62,7 @@ import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
 import java.sql.Driver;
+import java.util.ArrayList;
 import java.util.List;
 
 @EnableWebSecurity
@@ -76,11 +81,11 @@ public class WebSecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests((authz) -> {
             authz.requestMatchers(HttpMethod.GET, "/**").permitAll();
-            authz.requestMatchers(HttpMethod.POST, "/**/login*").permitAll();
-            authz.requestMatchers(HttpMethod.POST, "/**/logout").permitAll();
-            authz.requestMatchers(HttpMethod.GET, "/**/user").permitAll();
-            authz.requestMatchers(HttpMethod.PUT, "/**/logs/unnamed*");
-            authz.requestMatchers(HttpMethod.PUT, "/**/logs/unnamed/multipart*");
+            authz.requestMatchers(HttpMethod.POST, "/Olog/login/**").permitAll();
+            authz.requestMatchers(HttpMethod.POST, "/Olog/logout").permitAll();
+            authz.requestMatchers(HttpMethod.GET, "/Olog/user").permitAll();
+            authz.requestMatchers(HttpMethod.PUT, "/Olog/logs/unnamed/**").permitAll();
+            authz.requestMatchers(HttpMethod.PUT, "/Olog/logs/unnamed/multipart/**").permitAll();
             // This is needed for CORS pre-flight
             authz.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
             authz.anyRequest().authenticated();
@@ -160,68 +165,29 @@ public class WebSecurityConfig {
     @Value("${file.auth.enabled:true}")
     boolean file_enabled;
 
-    /*
     @Bean
-    DefaultSpringSecurityContextSource contextSource() {
-        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
-        if(ldap_manager_dn != null && !ldap_manager_dn.isEmpty() && ldap_manager_password != null && !ldap_manager_password.isEmpty()){
-            contextSource.setUserDn(ldap_manager_dn);
-            contextSource.setPassword(ldap_manager_password);
-        }
-        contextSource.afterPropertiesSet();
-        return contextSource;
-    }
-     */
+    public AuthenticationManager authenticationManager() {
+        List<AuthenticationProvider> providers = new ArrayList<>();
 
-    @Bean
-    LdapAuthoritiesPopulator authorities(BaseLdapPathContextSource contextSource) {
-        DefaultLdapAuthoritiesPopulator authorities =
-                new DefaultLdapAuthoritiesPopulator(contextSource, ldap_groups_search_base);
-        authorities.setGroupSearchFilter(ldap_groups_search_pattern);
-        authorities.setSearchSubtree(true);
-        authorities.setIgnorePartialResultException(true);
+        // LDAP
+        AuthenticationProvider ldapProvider = ldapAuthenticationProvider();
+        providers.add(ldapProvider);
 
-        return authorities;
+        // In-memory users
+        DaoAuthenticationProvider inMemoryAuthProvider = new DaoAuthenticationProvider();
+        inMemoryAuthProvider.setUserDetailsService(inMemoryUserDetailsService());
+        inMemoryAuthProvider.setPasswordEncoder(encoder());
+        providers.add(inMemoryAuthProvider);
+
+
+        // Active Directory
+        //var adProvider = activeDirectoryLdapAuthenticationProvider();
+        //providers.add(adProvider);
+
+        return new ProviderManager(providers);
     }
 
-    @Bean
-    AuthenticationManager authenticationManager(BaseLdapPathContextSource contextSource, LdapAuthoritiesPopulator authoritiesPopulator) throws Exception {
-        if (!ldap_enabled) {
-            return new ProviderManager(List.of(
-                    new AuthenticationProvider() {
-
-                        @Override
-                        public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                            return null;
-                        }
-
-                        @Override
-                        public boolean supports(Class<?> authentication) {
-                            return false;
-                        }
-                    }
-            ));
-        }
-
-        LdapBindAuthenticationManagerFactory factory = new LdapBindAuthenticationManagerFactory(contextSource);
-
-        if (ldap_user_dn_pattern != null && !ldap_user_dn_pattern.isEmpty()) {
-            factory.setUserDnPatterns(ldap_user_dn_pattern);
-        }
-        if (ldap_user_search_filter != null && !ldap_user_search_filter.isEmpty()) {
-            factory.setUserSearchFilter(ldap_user_search_filter);
-        }
-        if (ldap_user_search_base != null && !ldap_user_search_base.isEmpty()) {
-            factory.setUserSearchBase(ldap_user_search_base);
-        }
-        factory.setLdapAuthoritiesPopulator(authoritiesPopulator);
-
-        return factory.createAuthenticationManager();
-
-    }
-
-    @Bean
-    public InMemoryUserDetailsManager userDetailsService(AuthenticationManager authenticationManager) {
+    public InMemoryUserDetailsManager inMemoryUserDetailsService() {
         UserDetails admin = User.withDefaultPasswordEncoder()
                 .username("admin")
                 .password("adminPass")
@@ -234,14 +200,33 @@ public class WebSecurityConfig {
                 .build();
 
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager(admin, user);
-        manager.setAuthenticationManager(authenticationManager);
         return manager;
     }
 
-    /*
+    @Bean
+    public AuthenticationProvider ldapAuthenticationProvider() {
+        LdapContextSource contextSource = contextSource();
+        BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
+        bindAuthenticator.setUserDnPatterns(new String[] {ldap_user_dn_pattern});
 
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+        if(ldap_user_dn_pattern != null && !ldap_user_dn_pattern.isEmpty()){
+            bindAuthenticator.setUserDnPatterns(new String[] {ldap_user_dn_pattern});
+        }
+        if(ldap_user_search_filter != null && !ldap_user_search_filter.isEmpty()){
+            bindAuthenticator.setUserSearch(new FilterBasedLdapUserSearch(ldap_user_search_base, ldap_user_search_filter, contextSource));
+        }
+
+        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, ldap_groups_search_base);
+        myAuthPopulator.setGroupSearchFilter(ldap_groups_search_pattern);
+        myAuthPopulator.setSearchSubtree(true);
+        myAuthPopulator.setIgnorePartialResultException(true);
+
+        return new LdapAuthenticationProvider(bindAuthenticator, myAuthPopulator);
+    }
+
+    /*@Override
+    @Bean
+    public AuthenticationManager configure(AuthenticationManagerBuilder auth) throws Exception {
         if (ad_enabled) {
             ActiveDirectoryLdapAuthenticationProvider adProvider = new ActiveDirectoryLdapAuthenticationProvider(ad_domain, ad_url);
             adProvider.setConvertSubErrorCodesToExceptions(true);
@@ -302,8 +287,10 @@ public class WebSecurityConfig {
                     .withUser("user").password(encoder().encode("userPass")).roles("USER");
 
         }
+
+        return auth.build();
     }
-     */
+    */
 
     @Bean
     public LdapContextSource contextSource() {
