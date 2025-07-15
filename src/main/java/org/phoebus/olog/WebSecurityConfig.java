@@ -77,7 +77,7 @@ public class WebSecurityConfig {
     private String h2Url;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
         http.authorizeHttpRequests((authz) -> {
             authz.requestMatchers(HttpMethod.GET, "/**").permitAll();
@@ -90,7 +90,7 @@ public class WebSecurityConfig {
             authz.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
             authz.anyRequest().authenticated();
         });
-        http.addFilterBefore(new SessionFilter(authenticationManager, sessionRepository()), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new SessionFilter(authenticationManager(), sessionRepository()), UsernamePasswordAuthenticationFilter.class);
         http.httpBasic(Customizer.withDefaults());
 
         return http.build();
@@ -169,15 +169,15 @@ public class WebSecurityConfig {
     public AuthenticationManager authenticationManager() {
         List<AuthenticationProvider> providers = new ArrayList<>();
 
-        // LDAP
-        AuthenticationProvider ldapProvider = ldapAuthenticationProvider();
-        providers.add(ldapProvider);
-
         // In-memory users
         DaoAuthenticationProvider inMemoryAuthProvider = new DaoAuthenticationProvider();
         inMemoryAuthProvider.setUserDetailsService(inMemoryUserDetailsService());
         inMemoryAuthProvider.setPasswordEncoder(encoder());
         providers.add(inMemoryAuthProvider);
+
+        // LDAP
+        AuthenticationProvider ldapProvider = ldapAuthenticationProvider();
+        providers.add(ldapProvider);
 
 
         // Active Directory
@@ -188,27 +188,31 @@ public class WebSecurityConfig {
     }
 
     public InMemoryUserDetailsManager inMemoryUserDetailsService() {
-        UserDetails admin = User.withDefaultPasswordEncoder()
+        UserDetails admin = User.builder()
                 .username("admin")
-                .password("adminPass")
+                .password(encoder().encode("adminPass"))
                 .roles("ADMIN")
                 .build();
-        UserDetails user = User.withDefaultPasswordEncoder()
+        UserDetails user = User.builder()
                 .username("user")
-                .password("userPass")
+                .password(encoder().encode("userPass"))
                 .roles("USER")
                 .build();
 
-        InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager(admin, user);
-        return manager;
+        return new InMemoryUserDetailsManager(admin, user);
     }
 
     @Bean
     public AuthenticationProvider ldapAuthenticationProvider() {
-        LdapContextSource contextSource = contextSource();
-        BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
-        bindAuthenticator.setUserDnPatterns(new String[] {ldap_user_dn_pattern});
+        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
+        if(ldap_manager_dn != null && !ldap_manager_dn.isEmpty() && ldap_manager_password != null && !ldap_manager_password.isEmpty()){
+            contextSource.setUserDn(ldap_manager_dn);
+            contextSource.setPassword(ldap_manager_password);
+        }
+        contextSource.afterPropertiesSet();
 
+
+        BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
         if(ldap_user_dn_pattern != null && !ldap_user_dn_pattern.isEmpty()){
             bindAuthenticator.setUserDnPatterns(new String[] {ldap_user_dn_pattern});
         }
