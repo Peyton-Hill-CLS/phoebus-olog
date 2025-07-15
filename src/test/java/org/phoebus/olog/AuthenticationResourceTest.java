@@ -19,6 +19,7 @@
 package org.phoebus.olog;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.phoebus.olog.entity.UserData;
@@ -40,7 +41,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import javax.servlet.http.Cookie;
 import java.util.HashSet;
 import java.util.Set;
 
