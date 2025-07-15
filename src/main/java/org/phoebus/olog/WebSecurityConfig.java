@@ -160,6 +160,7 @@ public class WebSecurityConfig {
     @Value("${file.auth.enabled:true}")
     boolean file_enabled;
 
+    /*
     @Bean
     DefaultSpringSecurityContextSource contextSource() {
         DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
@@ -170,6 +171,7 @@ public class WebSecurityConfig {
         contextSource.afterPropertiesSet();
         return contextSource;
     }
+     */
 
     @Bean
     LdapAuthoritiesPopulator authorities(BaseLdapPathContextSource contextSource) {
@@ -304,12 +306,13 @@ public class WebSecurityConfig {
      */
 
     @Bean
-    public LdapContextSource ldapContextSource() {
+    public LdapContextSource contextSource() {
         LdapContextSource contextSource = new LdapContextSource();
         contextSource.setUrl(ldap_url);
         contextSource.setBase(ldap_base_dn);
         contextSource.setUserDn(ldap_manager_dn);
         contextSource.setPassword(ldap_manager_password);
+        contextSource.afterPropertiesSet();
         return contextSource;
     }
 
