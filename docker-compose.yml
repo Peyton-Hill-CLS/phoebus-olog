@@ -24,7 +24,8 @@ services:
       "
     volumes:
       - ./application.properties:/olog-target/application.properties
-      - ./keystore.p12:/keystore.p12
+      - /etc/letsencrypt/live/zerossl/cert.pem:/cert.pem
+      - /etc/letsencrypt/live/zerossl/privkey.pem:/privkey.pem
 
   mongo:
     image: mongo
@@ -57,3 +58,4 @@ volumes:
     driver: local
   olog-mongodata:
     driver: local
+

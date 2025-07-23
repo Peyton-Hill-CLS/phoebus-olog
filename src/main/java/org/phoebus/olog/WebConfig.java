@@ -26,6 +26,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.method.annotation.PrincipalMethodArgumentResolver;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -41,6 +42,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+        System.out.println("Add cors mappings:" + Arrays.toString(corsAllowedOrigins));
         registry.addMapping("/**")
                 .allowCredentials(true)
                 .allowedMethods("HEAD", "GET", "POST", "PUT", "DELETE", "PATCH")
