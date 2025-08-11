@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
       - "8181:8181"
-      - "25:25"
+      # - "25:25"
     depends_on:
       - mongo
       - elastic
@@ -21,12 +21,13 @@ services:
           echo Waiting for Elasticsearch;
           sleep 1;
         done;
-        java -Duser.timezone=CST -jar service-olog-*.jar --spring.config.location=file:/olog-target/ --spring.config.name=application
+        java -Duser.timezone=CST -Djava.util.logging.config.file=\"/logging.properties\" -jar service-olog-*.jar --spring.config.location=file:/olog-target/ --spring.config.name=application
       "
     volumes:
       - ./application.properties:/olog-target/application.properties
       - /etc/letsencrypt/live/zerossl/cert.pem:/cert.pem
       - /etc/letsencrypt/live/zerossl/privkey.pem:/privkey.pem
+      - ./logging.properties:/logging.properties
 
   mongo:
     image: mongo

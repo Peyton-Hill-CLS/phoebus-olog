@@ -12,8 +12,12 @@ import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EmailLogEntryNotifier implements LogEntryNotifier {
+
+    private final Logger logger = Logger.getLogger(EmailLogEntryNotifier.class.getName());
 
     public Mailer mailer;
     public String URL = "https://svt-olog01.clsi.ca/logs/";
@@ -22,6 +26,8 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         mailer = MailerBuilder
                 .withSMTPServer("mail.lightsource.ca", 25, "e-log@lightsource.ca")
                 .buildMailer();
+
+        logger.log(Level.INFO, "Starting email notifier");
     }
 
     @Override
@@ -46,7 +52,10 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
                 .withHTMLText(content.toString())
                 .buildEmail();
 
+
+        logger.log(Level.INFO, "Sending email");
         mailer.sendMail(email);
+        logger.log(Level.INFO, "Email sent");
     }
 
     public static String convertMarkdownToHtml(String md) {
