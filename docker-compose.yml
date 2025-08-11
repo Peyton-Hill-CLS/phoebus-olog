@@ -6,6 +6,7 @@ services:
     ports:
       - "8080:8080"
       - "8181:8181"
+      - "25:25"
     depends_on:
       - mongo
       - elastic

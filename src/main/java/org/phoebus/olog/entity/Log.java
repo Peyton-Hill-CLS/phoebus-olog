@@ -59,6 +59,7 @@ public class Log implements Serializable {
     private Set<Property> properties = new HashSet<>();
 
     private Set<Attachment> attachments = new HashSet<>();
+    private Set<String> forwardTo = new HashSet<>();
 
     protected Log() {
     }
@@ -306,6 +307,24 @@ public class Log implements Serializable {
     }
 
     /**
+     * Getter for log email forwarding
+     *
+     * @return the attachments
+     */
+    public Set<String> getForwardTo() {
+        return forwardTo;
+    }
+
+    /**
+     * Setter for log email forwarding
+     *
+     * @param forwardTo - the forward to emals to set
+     */
+    public void setForwardTo(Set<String> forwardTo) {
+        this.forwardTo = forwardTo;
+    }
+
+    /**
      * @return the serialversionuid
      */
     public static long getSerialversionuid() {
@@ -362,6 +381,7 @@ public class Log implements Serializable {
         private Set<Logbook> logbooks = new HashSet<>();
         private Set<Tag> tags = new HashSet<>();
         private Set<Attachment> attachments = new HashSet<>();
+        private Set<String> forwardTo = new HashSet<>();
 
         public LogBuilder() {
         }
@@ -393,6 +413,7 @@ public class Log implements Serializable {
             this.tags = log.getTags();
 
             this.attachments = log.getAttachments();
+            this.forwardTo = log.getForwardTo();
         }
 
         public LogBuilder(String source) {
@@ -568,6 +589,7 @@ public class Log implements Serializable {
             log.setTags(tags);
             log.setProperties(properties);
             log.setAttachments(attachments);
+            log.setForwardTo(forwardTo);
             return log;
         }
     }
