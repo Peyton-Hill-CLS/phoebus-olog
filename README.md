@@ -193,3 +193,7 @@ What you should see is:
 
 If you would like to read up more on how passing environment variables between steps in a GitHub action works, 
 please see their docs on [Job Outputs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs). 
+
+# Clearing logs
+
+`sudo journalctl --vacuum-time=7d`

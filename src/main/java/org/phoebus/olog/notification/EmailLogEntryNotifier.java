@@ -48,6 +48,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         content.append("Details: ").append(convertMarkdownToHtml(logEntry.getDescription()));
 
         final Email email = builder
+                .from("e-log@lightsource.ca")
                 .withSubject("Olog Entry: " + logEntry.getTitle())
                 .withHTMLText(content.toString())
                 .buildEmail();
