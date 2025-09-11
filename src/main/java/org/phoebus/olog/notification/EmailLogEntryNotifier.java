@@ -1,5 +1,7 @@
 package org.phoebus.olog.notification;
 
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -12,6 +14,7 @@ import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,12 +50,12 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
         StringBuilder content = new StringBuilder();
         content.append("User: ").append(logEntry.getOwner());
-        content.append("\nDate: ").append(logEntry.getCreatedDate());
-        content.append("\nSummary: ").append(logEntry.getTitle());
-        content.append("\nDetails: \n").append(logEntry.getDescription());
+        content.append("\n\nDate: ").append(logEntry.getCreatedDate());
+        content.append("\n\nSummary: ").append(logEntry.getTitle());
+        content.append("\n\nDetails: \n\n").append(logEntry.getSource());
 
         final Email email = builder
-                .from("e-log@lightsource.ca")
+                .from("o-log@lightsource.ca")
                 .withSubject("Olog Entry: " + logEntry.getTitle())
                 .withHTMLText(convertMarkdownToHtml(content.toString()))
                 .buildEmail();
@@ -64,8 +67,11 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
     }
 
     public static String convertMarkdownToHtml(String md) {
-        Parser parser = Parser.builder().build();
+        List<Extension> extensions = List.of(TablesExtension.create());
+        Parser parser = Parser.builder().extensions(extensions).build();
+        HtmlRenderer renderer = HtmlRenderer.builder().extensions(extensions).build();
+
         Node document = parser.parse(md);
-        return HtmlRenderer.builder().build().render(document);
+        return renderer.render(document);
     }
 }
