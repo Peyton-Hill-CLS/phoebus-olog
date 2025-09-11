@@ -6,8 +6,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.phoebus.olog.entity.Log;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
-import org.simplejavamail.api.email.Recipient;
 import org.simplejavamail.api.mailer.Mailer;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 
@@ -24,8 +24,12 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
     public EmailLogEntryNotifier() {
         mailer = MailerBuilder
-                .withSMTPServer("mail.lightsource.ca", 25, "e-log@lightsource.ca")
+                .withSMTPServer("mail.clsi.ca", 25)
+                .withTransportStrategy(TransportStrategy.SMTP_TLS)
                 .buildMailer();
+
+        System.setProperty("mail.smtp.starttls.enable", "false");
+        System.setProperty("mail.smtp.ssl.trust", "mail.clsi.ca");
 
         logger.log(Level.INFO, "Starting email notifier");
     }
@@ -43,14 +47,14 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
         StringBuilder content = new StringBuilder();
         content.append("User: ").append(logEntry.getOwner());
-        content.append("Date: ").append(logEntry.getCreatedDate());
-        content.append("Summary: ").append(logEntry.getTitle());
-        content.append("Details: ").append(convertMarkdownToHtml(logEntry.getDescription()));
+        content.append("\nDate: ").append(logEntry.getCreatedDate());
+        content.append("\nSummary: ").append(logEntry.getTitle());
+        content.append("\nDetails: \n").append(logEntry.getDescription());
 
         final Email email = builder
                 .from("e-log@lightsource.ca")
                 .withSubject("Olog Entry: " + logEntry.getTitle())
-                .withHTMLText(content.toString())
+                .withHTMLText(convertMarkdownToHtml(content.toString()))
                 .buildEmail();
 
 
