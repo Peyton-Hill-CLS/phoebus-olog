@@ -13,7 +13,6 @@ import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,6 +24,9 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
     public Mailer mailer;
     public String URL = "https://svt-olog01.clsi.ca/logs/";
 
+    public final Parser parser;
+    public final HtmlRenderer renderer;
+
     public EmailLogEntryNotifier() {
         mailer = MailerBuilder
                 .withSMTPServer("mail.clsi.ca", 25)
@@ -33,6 +35,10 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
         System.setProperty("mail.smtp.starttls.enable", "false");
         System.setProperty("mail.smtp.ssl.trust", "mail.clsi.ca");
+
+        List<Extension> extensions = List.of(TablesExtension.create());
+        parser = Parser.builder().extensions(extensions).build();
+        renderer = HtmlRenderer.builder().extensions(extensions).build();
 
         logger.log(Level.INFO, "Starting email notifier");
     }
@@ -52,7 +58,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         content.append("User: ").append(logEntry.getOwner());
         content.append("\\\nDate: ").append(logEntry.getCreatedDate());
         content.append("\\\nSummary: ").append(logEntry.getTitle());
-        content.append("\\\nDetails: \\\n").append(logEntry.getSource());
+        content.append("\\\nDetails: \n\n").append(logEntry.getSource());
         content.append("\n\nView this log at: [").append(URL).append(logEntry.getId()).append("](").append(URL).append(logEntry.getId()).append(")");
 
         final Email email = builder
@@ -67,11 +73,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         logger.log(Level.INFO, "Email sent");
     }
 
-    public static String convertMarkdownToHtml(String md) {
-        List<Extension> extensions = List.of(TablesExtension.create());
-        Parser parser = Parser.builder().extensions(extensions).build();
-        HtmlRenderer renderer = HtmlRenderer.builder().extensions(extensions).build();
-
+    public String convertMarkdownToHtml(String md) {
         Node document = parser.parse(md);
         return renderer.render(document);
     }
