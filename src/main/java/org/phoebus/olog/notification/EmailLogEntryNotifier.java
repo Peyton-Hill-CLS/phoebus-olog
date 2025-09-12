@@ -38,7 +38,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
     }
 
     @Configuration
-    public static class SpringEmailLogEntryNotifier implements LogEntryNotifier {
+    public static class SpringEmailLogEntryNotifier {
         private final Logger logger = Logger.getLogger(EmailLogEntryNotifier.class.getName());
 
         public Mailer mailer;
@@ -52,7 +52,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         public String host;
         @Value("${email.port:25}")
         public int port;
-        @Value("${email.send.address}")
+        @Value("${email.address}")
         public String address;
 
         public SpringEmailLogEntryNotifier() {
@@ -65,7 +65,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
         @PostConstruct
         public void initMailer() {
-            logger.info("Initializing mailer with host: " + host + ", port: " + port);
+            logger.info("Initializing mailer with host: " + host + ", port: " + port + " address: " + address);
 
             mailer = MailerBuilder
                     .withSMTPServer(host, port)
@@ -76,7 +76,6 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
             System.setProperty("mail.smtp.ssl.trust", host);
         }
 
-        @Override
         public void notify(Log logEntry) {
             if (logEntry.getForwardTo().isEmpty()) {
                 return;
