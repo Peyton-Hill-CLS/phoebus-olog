@@ -53,6 +53,7 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         content.append("\n\nDate: ").append(logEntry.getCreatedDate());
         content.append("\n\nSummary: ").append(logEntry.getTitle());
         content.append("\n\nDetails: \n\n").append(logEntry.getSource());
+        content.append("\n\nView this log at [").append(URL).append(logEntry.getId()).append("](").append(URL).append(logEntry.getId()).append(")");
 
         final Email email = builder
                 .from("o-log@lightsource.ca")
