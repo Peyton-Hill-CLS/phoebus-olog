@@ -12,29 +12,40 @@ import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Configuration
 public class EmailLogEntryNotifier implements LogEntryNotifier {
 
     private final Logger logger = Logger.getLogger(EmailLogEntryNotifier.class.getName());
 
     public Mailer mailer;
-    public String URL = "https://svt-olog01.clsi.ca/logs/";
 
     public final Parser parser;
     public final HtmlRenderer renderer;
 
+    @Value("${email.url}")
+    public String url;
+    @Value("${email.host}")
+    public String host;
+    @Value("${email.port:25}")
+    public int port;
+    @Value("${email.send.address}")
+    public String address;
+
     public EmailLogEntryNotifier() {
         mailer = MailerBuilder
-                .withSMTPServer("mail.clsi.ca", 25)
+                .withSMTPServer(host, port)
                 .withTransportStrategy(TransportStrategy.SMTP_TLS)
                 .buildMailer();
 
         System.setProperty("mail.smtp.starttls.enable", "false");
-        System.setProperty("mail.smtp.ssl.trust", "mail.clsi.ca");
+        System.setProperty("mail.smtp.ssl.trust", host);
 
         List<Extension> extensions = List.of(TablesExtension.create());
         parser = Parser.builder().extensions(extensions).build();
@@ -59,10 +70,10 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
         content.append("\\\nDate: ").append(logEntry.getCreatedDate());
         content.append("\\\nSummary: ").append(logEntry.getTitle());
         content.append("\\\nDetails: \n\n").append(logEntry.getSource());
-        content.append("\n\nView this log at: [").append(URL).append(logEntry.getId()).append("](").append(URL).append(logEntry.getId()).append(")");
+        content.append("\n\nView this log at: [").append(url).append(logEntry.getId()).append("](").append(url).append(logEntry.getId()).append(")");
 
         final Email email = builder
-                .from("o-log@lightsource.ca")
+                .from(address)
                 .withSubject("Olog Entry: " + logEntry.getTitle())
                 .withHTMLText(convertMarkdownToHtml(content.toString()))
                 .buildEmail();
