@@ -1,5 +1,6 @@
 package org.phoebus.olog.notification;
 
+import jakarta.annotation.PostConstruct;
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
@@ -14,12 +15,14 @@ import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.mailer.MailerBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Configuration
+@Component
 public class EmailLogEntryNotifier implements LogEntryNotifier {
 
     private final Logger logger = Logger.getLogger(EmailLogEntryNotifier.class.getName());
@@ -39,6 +42,17 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
     public String address;
 
     public EmailLogEntryNotifier() {
+        List<Extension> extensions = List.of(TablesExtension.create());
+        parser = Parser.builder().extensions(extensions).build();
+        renderer = HtmlRenderer.builder().extensions(extensions).build();
+
+        logger.log(Level.INFO, "Starting email notifier");
+    }
+
+    @PostConstruct
+    public void initMailer() {
+        logger.info("Initializing mailer with host: " + host + ", port: " + port);
+
         mailer = MailerBuilder
                 .withSMTPServer(host, port)
                 .withTransportStrategy(TransportStrategy.SMTP_TLS)
@@ -46,12 +60,6 @@ public class EmailLogEntryNotifier implements LogEntryNotifier {
 
         System.setProperty("mail.smtp.starttls.enable", "false");
         System.setProperty("mail.smtp.ssl.trust", host);
-
-        List<Extension> extensions = List.of(TablesExtension.create());
-        parser = Parser.builder().extensions(extensions).build();
-        renderer = HtmlRenderer.builder().extensions(extensions).build();
-
-        logger.log(Level.INFO, "Starting email notifier");
     }
 
     @Override
